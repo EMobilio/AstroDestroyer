@@ -7,7 +7,7 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self):
         """ Initializer for Player objects which sets the frames, the frame_index, the rectangle,
-            and the current player image
+            the current player image, the players lives, health, and remaining bullets
         """
         super().__init__()
         ship_frame_1 = pygame.transform.scale(pygame.image.load(os.path.join("assets", "ship_frame_1.png")).convert_alpha(), (100, 100))
