@@ -5,41 +5,63 @@ from bullet import *
 from asteroid import *
 from title import *
 
-# Constants
+# Game constants
 WIDTH = 800
 HEIGHT = 900
 FPS = 60
 
+# Colors
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+
+# Math operator lambda functions
 OPS = {"+": lambda x, y: x+y,
        "-": lambda x, y: x-y,
        "*": lambda x, y: x*y,
        "//": lambda x, y: x//y}
 
+# Math difficulty constants
 LEVEL_1 = 1
 LEVEL_2 = 2
 LEVEL_3 = 3
 LEVEL_4 = 4
 LEVEL_5 = 5
 
+# Pygame init
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("AstroDestroyer")
 clock = pygame.time.Clock()
 bg = pygame.transform.scale(pygame.image.load(os.path.join("assets", "SpaceBackGround.jpg")), (800, 900))
-start_message_font = pygame.font.SysFont("arial", 24)
-start_message = start_message_font.render("PRESS SPACE TO START", False, (255, 255, 255))
-health_bar = pygame.Rect((30, 30), (150, 30))
-health_frame = pygame.Rect((28, 28), (154, 34))
+score = 0
 
-# Sprites
+# Sprites and groups
 title = pygame.sprite.GroupSingle()
 title.add(Title(WIDTH, HEIGHT))
 player = pygame.sprite.GroupSingle()
 player.add(Player())
 bullets = pygame.sprite.Group()
 asteroids = pygame.sprite.Group()
+asteroids.add(Asteroid(2))
+asteroids.add(Asteroid(2))
+asteroids.add(Asteroid(2))
+asteroids.add(Asteroid(2))
+asteroids.add(Asteroid(2))
+asteroids.add(Asteroid(2))
+
+# Images and text
+game_font = pygame.font.SysFont("arial", 24)
+start_message = game_font.render("PRESS SPACE TO START", False, WHITE)
+health_bar = pygame.Rect((30, 30), (player.sprite.health, 30))
+health_frame = pygame.Rect((28, 28), (154, 34))
+heart = pygame.image.load(os.path.join("assets", "heart.png")).convert_alpha()
+bullet_image = pygame.image.load(os.path.join("assets", "bullet.png")).convert_alpha()
 
 def generate_problem(difficulty_level):
+    """ Input: difficulty_level- int
+        
+
+    """
     if difficulty_level == 1:
         i, j = 1, 20
         k, l = 1, 20
@@ -68,15 +90,14 @@ def generate_problem(difficulty_level):
     string = str(a) + " " + op + " " + str(b)
     return (string, answer)
 
-def handle_player_collision():
+def check_player_collision():
     if pygame.sprite.spritecollide(player.sprite, asteroids, False):
         if pygame.sprite.spritecollide(player.sprite, asteroids, True, pygame.sprite.collide_mask):
-            health_bar.width -= 30
             return True
     
     return False
 
-def handle_bullet_collision():
+def check_bullet_collision():
     if pygame.sprite.groupcollide(bullets, asteroids, False, False):
         if pygame.sprite.groupcollide(bullets, asteroids, True, True, pygame.sprite.collide_mask):
             return True
@@ -94,8 +115,15 @@ def draw_screen(game_active):
         bullets.update()
         asteroids.draw(screen)
         asteroids.update()
-        pygame.draw.rect(screen, (255, 0, 0), health_bar)
-        pygame.draw.rect(screen, (255, 255, 255), health_frame, 2)
+        pygame.draw.rect(screen, RED, health_bar)
+        pygame.draw.rect(screen, WHITE, health_frame, 2)
+        for life in range(player.sprite.lives):
+            screen.blit(heart, (28 + 40*life, 70))
+        score_text = game_font.render(f"Score: {score}", False, WHITE)
+        screen.blit(score_text, (28, 74 + heart.get_height()))
+        screen.blit(bullet_image, (28, 78 + heart.get_height() + score_text.get_height()))
+        ammo_text = game_font.render(f"x {player.sprite.bullets}", False, WHITE)
+        screen.blit(ammo_text, (37 + bullet_image.get_width(), 78 + heart.get_height() + score_text.get_height()))
     else:
         title.draw(screen)
         title.update(HEIGHT)
@@ -107,6 +135,7 @@ def main():
     """ Main game loop """
     run = True
     game_active = False
+    global score
 
     while run:
         # Event loop
@@ -130,8 +159,20 @@ def main():
                         pygame.time.delay(300)
 
         if game_active:
-            handle_player_collision()
-            handle_bullet_collision()
+            # check and handle player and bullet collisions
+            if check_player_collision() == True:
+                player.sprite.health -= 30
+                if player.sprite.health == 0:
+                    player.sprite.lives -= 1
+                    if player.sprite.lives == 0:
+                        game_active = False
+                    else:
+                        player.sprite.health = 150
+
+                health_bar.width = player.sprite.health
+
+            if check_bullet_collision() == True:
+                score += 10
 
         draw_screen(game_active)
         clock.tick(FPS)
