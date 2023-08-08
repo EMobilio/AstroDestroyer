@@ -3,11 +3,11 @@ import pygame, os
 class Player(pygame.sprite.Sprite):
     """ Class for Player sprite objects that inherits from the pygame Sprite class """
 
-    VELOCITY = 5
+    VELOCITY = 7
 
     def __init__(self):
         """ Initializer for Player objects which sets the frames, the frame_index, the rectangle,
-            the current player image, the players lives, health, and remaining bullets
+            the current player image, the players lives, health, remaining bullets, and score
         """
         super().__init__()
         ship_frame_1 = pygame.transform.scale(pygame.image.load(os.path.join("assets", "ship_frame_1.png")).convert_alpha(), (100, 100))
@@ -17,8 +17,9 @@ class Player(pygame.sprite.Sprite):
         self.image = self.ship_frames[self.frame_index]
         self.rect = self.image.get_rect(midbottom=(400, 880))
         self.lives = 3
-        self.health = 100
+        self.health = 150
         self.bullets = 30
+        self.score = 0
 
     def change_animation(self):
         """ Marginally increments the frame_index attribute, assigning it a value of 0 when 
