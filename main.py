@@ -1,9 +1,9 @@
 import pygame, os, random
 from sys import exit
-from player import *
-from bullet import *
-from asteroid import *
-from title import *
+from player import Player
+from bullet import Bullet
+from asteroid import Asteroid
+from title import Title
 
 # Game constants
 WIDTH = 800
@@ -30,11 +30,8 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("AstroDestroyer")
 clock = pygame.time.Clock()
-bg = pygame.transform.scale(pygame.image.load(os.path.join("assets", "SpaceBackGround.jpg")), (800, 900))
 asteroid_timer = pygame.USEREVENT + 1
-pygame.time.set_timer(asteroid_timer, 1500)
 problem_timer = pygame.USEREVENT + 2
-pygame.time.set_timer(problem_timer, 45000)
 
 # Sprites and groups
 title = pygame.sprite.GroupSingle()
@@ -45,10 +42,13 @@ bullets = pygame.sprite.Group()
 asteroids = pygame.sprite.Group()
 
 # Surfaces
+bg = pygame.transform.scale(pygame.image.load(os.path.join("assets", "SpaceBackGround.jpg")), (800, 900))
 game_font = pygame.font.SysFont("arial", 24)
 problem_font = pygame.font.SysFont("arial", 36)
 answer_font = pygame.font.SysFont("arial", 16)
+game_over_image = pygame.transform.scale(pygame.image.load(os.path.join("assets", "game_over.png")).convert_alpha(), (594, 78))
 start_message = game_font.render("PRESS SPACE TO START", False, WHITE)
+retry_message = game_font.render("PRESS SPACE TO RETRY", False, WHITE)
 health_bar = pygame.Rect((30, 30), (player.sprite.health, 30))
 health_frame = pygame.Rect((28, 28), (154, 34))
 heart = pygame.image.load(os.path.join("assets", "heart.png")).convert_alpha()
@@ -59,6 +59,7 @@ input_bar = pygame.Rect((0, 0), (100, 25))
 input_bar.center = (WIDTH/2, HEIGHT/2)
 input_border = pygame.Rect((0, 0), (102, 27))
 input_border.center = (WIDTH/2, HEIGHT/2)
+
 
 def generate_problem(difficulty_level):
     """ Input: difficulty_level- int
@@ -100,6 +101,7 @@ def generate_problem(difficulty_level):
     string = str(a) + " " + op + " " + str(b)
     return (string, answer)
 
+
 def math_problem(difficulty_level):
     """ Input: difficulty_level- int
 
@@ -127,7 +129,7 @@ def math_problem(difficulty_level):
                     event.key in [pygame.K_0, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9, pygame.K_MINUS]):
                     user_answer += event.unicode
 
-                if event.key == pygame.K_RETURN:
+                if event.key == pygame.K_RETURN and user_answer != "":
                     answered = True
                     
         # draw the math window
@@ -172,6 +174,7 @@ def check_player_collision():
     
     return False
 
+
 def check_bullet_collision():
     """ Returns True if any sprites in the bullets and asteroids groups are colliding, destroying
         any that are, and False otherwise 
@@ -183,6 +186,7 @@ def check_bullet_collision():
         
     return False
 
+
 def reset_game():
     """ Resets the game variables to their initial state """
     player.sprite.lives = 3
@@ -190,12 +194,19 @@ def reset_game():
     player.sprite.bullets = 30
     player.sprite.rect.midbottom = (400, 880)
     player.sprite.score = 0
+    health_bar.width = player.sprite.health
     pygame.time.set_timer(asteroid_timer, 1500)
     asteroids.empty()
     bullets.empty()
+    pygame.time.delay(300)
+
+
+def draw_screen(game_active, game_over):
+    """ Inputs: game_active- boolean
+                game_over- boolean
     
-def draw_screen(game_active):
-    """ Draws the current state of the screen based on the game_active argument """
+        Draws the current state of the screen based on the arguments
+    """
     screen.blit(bg, (0, 0))
     if game_active:
         player.draw(screen)
@@ -213,6 +224,9 @@ def draw_screen(game_active):
         screen.blit(bullet_image, (28, 78 + heart.get_height() + score_text.get_height()))
         ammo_text = game_font.render(f"x {player.sprite.bullets}", False, WHITE)
         screen.blit(ammo_text, (37 + bullet_image.get_width(), 78 + heart.get_height() + score_text.get_height()))
+    elif game_over:
+        screen.blit(game_over_image, (WIDTH/2 - game_over_image.get_width()/2, HEIGHT/4))
+        screen.blit(retry_message, (WIDTH/2 - retry_message.get_width()/2, HEIGHT/3 + 100))
     else:
         title.draw(screen)
         title.update(HEIGHT)
@@ -220,10 +234,12 @@ def draw_screen(game_active):
 
     pygame.display.update()
 
+
 def main():
     """ Main game loop """
     run = True
     game_active = False
+    game_over = False
 
     while run:
         # Event loop
@@ -242,18 +258,28 @@ def main():
 
                 # check for asteroid spawn event; increase asteroid speed as score increases
                 if event.type == asteroid_timer:
-                    asteroids.add(Asteroid(1 + player.sprite.score//250))
-
+                    if player.sprite.score < 0:
+                        asteroids.add(Asteroid(1))
+                    else:
+                        asteroids.add(Asteroid(1 + player.sprite.score//250))
+ 
                 # check for problem generation event; increase problem difficulty as score increases
                 if event.type == problem_timer:
-                    math_problem(min(1 + player.sprite.score // 500, 5))
+                    if player.sprite.score < 0:
+                        math_problem(1)
+                    else:
+                        math_problem(min(1 + player.sprite.score // 500, 5))
+                    pygame.time.set_timer(problem_timer, 45000)
 
             else:
                 # check for game start
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        game_active = True
                         pygame.time.delay(300)
+                        game_active = True
+                        game_over = False
+                        pygame.time.set_timer(asteroid_timer, 1500)
+                        pygame.time.set_timer(problem_timer, 45000)
 
         if game_active:
             # check and handle player collisions
@@ -263,8 +289,12 @@ def main():
                     player.sprite.lives -= 1
                     # reset game variables when out of lives, otherwise reset health for new life
                     if player.sprite.lives == 0:
+                        health_bar.width = player.sprite.health
+                        draw_screen(game_active, game_over)
                         game_active = False
+                        game_over = True
                         reset_game()
+                        pygame.time.delay(1000)
                     else:
                         player.sprite.health = 150
                 health_bar.width = player.sprite.health
@@ -274,11 +304,19 @@ def main():
                 player.sprite.score += 10
                 # speed up the asteroid timer with every 250 points earned
                 if (player.sprite.score % 250 == 0 or player.sprite.score % 250 == 5) and player.sprite.score != 0:
-                    draw_screen(game_active)
+                    draw_screen(game_active, game_over)
                     pygame.time.set_timer(asteroid_timer, max(1500 - 100*(player.sprite.score//250), 500))
 
+            # reset game if no more ammo
+            if player.sprite.bullets == 0 and not bullets:
+                draw_screen(game_active, game_over)
+                game_active = False
+                game_over = True
+                reset_game()
+                pygame.time.delay(1000)
 
-        draw_screen(game_active)
+
+        draw_screen(game_active, game_over)
         clock.tick(FPS)
 
 if __name__ == "__main__":

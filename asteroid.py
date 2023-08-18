@@ -30,10 +30,10 @@ class Asteroid(pygame.sprite.Sprite):
 
             Updates the state of the asteroids by calling the handle_movement() and destroy() methods as needed.
             If an asteroid moves beyond the bottom of the screen, it is destroyed and the player score is reduced
-            by 5
+            by 15
         """
         self.handle_movement()
         # destroy asteroids that go beyond the bottom of the screen
         if self.rect.y > 900:
-            player.sprite.score -= 5
+            player.sprite.score -= 15
             self.destroy()
