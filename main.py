@@ -46,9 +46,11 @@ bg = pygame.transform.scale(pygame.image.load(os.path.join("assets", "SpaceBackG
 game_font = pygame.font.SysFont("arial", 24)
 problem_font = pygame.font.SysFont("arial", 36)
 answer_font = pygame.font.SysFont("arial", 16)
+highscore_font = pygame.font.SysFont("arial", 44)
 game_over_image = pygame.transform.scale(pygame.image.load(os.path.join("assets", "game_over.png")).convert_alpha(), (594, 78))
 start_message = game_font.render("PRESS SPACE TO START", False, WHITE)
 retry_message = game_font.render("PRESS SPACE TO RETRY", False, WHITE)
+new_highscore_message = highscore_font.render("NEW HIGH SCORE!", False, GREEN)
 health_bar = pygame.Rect((30, 30), (player.sprite.health, 30))
 health_frame = pygame.Rect((28, 28), (154, 34))
 heart = pygame.image.load(os.path.join("assets", "heart.png")).convert_alpha()
@@ -59,6 +61,47 @@ input_bar = pygame.Rect((0, 0), (100, 25))
 input_bar.center = (WIDTH/2, HEIGHT/2)
 input_border = pygame.Rect((0, 0), (102, 27))
 input_border.center = (WIDTH/2, HEIGHT/2)
+
+
+def load_highscore():
+    """ Opens highscore.txt in a+ mode (creates it if it doesn't exist) and reads and returns
+        the player's high score, or 0 if there is no high score yet
+    """
+    with open("highscore.txt", "a+") as file:
+        file.seek(0)
+        highscore = file.read()
+
+    if highscore == '':
+        return 0
+
+    return int(highscore)
+
+
+def update_highscore(score):
+    """ Input: score- int
+    
+        Opens highscore.txt in w mode and writes the given score to it, repalcing the old one
+    """
+    with open("highscore.txt", "w") as file:
+        file.write(str(score))
+
+
+def handle_highscore(score):
+    """ Input: score- int
+     
+        Gets the current high score using load_highscore() and compares it to the given score,
+        updating the high score using updating_highscore() if the given score is greater. Returns
+        a tuple containing the given score, the current highscore (as determined in the function), and
+        a boolean value indicating whether there is a new high score
+    """
+    new_highscore = False
+    highscore = load_highscore()
+    if score > highscore:
+        new_highscore = True
+        update_highscore(score)
+        highscore = score
+
+    return (score, highscore, new_highscore)
 
 
 def generate_problem(difficulty_level):
@@ -105,7 +148,10 @@ def generate_problem(difficulty_level):
 def math_problem(difficulty_level):
     """ Input: difficulty_level- int
 
-
+        Calls generate_problem() to generate a math problem based on difficulty_level and starts a new
+        loop to display the problem on the screen and handle user input, checking whether the user gave
+        the correct answer and displaying appropriate messages and updating the player's bullet count if
+        they did
     """
     problem = generate_problem(difficulty_level)
     problem_text = problem_font.render(f"What is {problem[0]}?", False, BLACK)
@@ -143,10 +189,10 @@ def math_problem(difficulty_level):
         # once the user submits an answer, update the window and game variables accordingly and break the loop
         if answered:
             if int(user_answer) == problem[1]:
-                player.sprite.bullets += 35
+                player.sprite.bullets += 40
                 message = "Correct!"
                 color  = GREEN
-                new_bullet_text = problem_font.render("+35", False, GREEN)
+                new_bullet_text = problem_font.render("+40", False, GREEN)
                 screen.blit(new_bullet_text, (WIDTH/2 - new_bullet_text.get_width()/2 + math_window.width/4, HEIGHT/2 - new_bullet_text.get_height()/2 + math_window.height/4))
                 screen.blit(pygame.transform.scale(bullet_image, (22, 44)), (WIDTH/2 + math_window.width/4 + new_bullet_text.get_width()/2 + 3, HEIGHT/2 - 2*bullet_image.get_height()/2 + math_window.height/4))
             else:
@@ -201,13 +247,16 @@ def reset_game():
     pygame.time.delay(300)
 
 
-def draw_screen(game_active, game_over):
+def draw_screen(game_active, game_over, **kwargs):
     """ Inputs: game_active- boolean
                 game_over- boolean
+                **kwargs- will contain integers values for the last score and the high score and
+                          a boolean indicating if there is a new high score
     
         Draws the current state of the screen based on the arguments
     """
     screen.blit(bg, (0, 0))
+    # draw the main game screen
     if game_active:
         player.draw(screen)
         player.update()
@@ -224,9 +273,17 @@ def draw_screen(game_active, game_over):
         screen.blit(bullet_image, (28, 78 + heart.get_height() + score_text.get_height()))
         ammo_text = game_font.render(f"x {player.sprite.bullets}", False, WHITE)
         screen.blit(ammo_text, (37 + bullet_image.get_width(), 78 + heart.get_height() + score_text.get_height()))
+    # draw the game over screen
     elif game_over:
         screen.blit(game_over_image, (WIDTH/2 - game_over_image.get_width()/2, HEIGHT/4))
-        screen.blit(retry_message, (WIDTH/2 - retry_message.get_width()/2, HEIGHT/3 + 100))
+        score_text = problem_font.render(f"Score: {kwargs['score']}", False, WHITE)
+        highscore_text = problem_font.render(f"High Score: {kwargs['highscore']}", False, WHITE)
+        screen.blit(score_text, (WIDTH/2 - highscore_text.get_width()/2, HEIGHT/3 + 70))
+        screen.blit(highscore_text, (WIDTH/2 - highscore_text.get_width()/2, HEIGHT/3 + 80 + score_text.get_height()))
+        screen.blit(retry_message, (WIDTH/2 - retry_message.get_width()/2, HEIGHT/3 + 130 + score_text.get_height() + highscore_text.get_height()))
+        if kwargs['new_highscore'] == True:
+            screen.blit(new_highscore_message, (WIDTH/2 - new_highscore_message.get_width()/2, HEIGHT/3 + 300))
+    # draw the title screen
     else:
         title.draw(screen)
         title.update(HEIGHT)
@@ -240,6 +297,9 @@ def main():
     run = True
     game_active = False
     game_over = False
+    new_highscore = False
+    score = 0
+    highscore = 0
 
     while run:
         # Event loop
@@ -291,6 +351,7 @@ def main():
                     if player.sprite.lives == 0:
                         health_bar.width = player.sprite.health
                         draw_screen(game_active, game_over)
+                        score, highscore, new_highscore = handle_highscore(player.sprite.score)
                         game_active = False
                         game_over = True
                         reset_game()
@@ -310,13 +371,17 @@ def main():
             # reset game if no more ammo
             if player.sprite.bullets == 0 and not bullets:
                 draw_screen(game_active, game_over)
+                score, highscore, new_highscore = handle_highscore(player.sprite.score)
                 game_active = False
                 game_over = True
                 reset_game()
                 pygame.time.delay(1000)
 
-
-        draw_screen(game_active, game_over)
+        # if player lost, call draw_screen with scoring arguments
+        if game_over:
+            draw_screen(game_active, game_over, score=score, highscore=highscore, new_highscore=new_highscore)
+        else:
+            draw_screen(game_active, game_over)
         clock.tick(FPS)
 
 if __name__ == "__main__":
