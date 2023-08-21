@@ -10,8 +10,8 @@ class Player(pygame.sprite.Sprite):
             the current player image, the players lives, health, remaining bullets, and score
         """
         super().__init__()
-        ship_frame_1 = pygame.transform.scale(pygame.image.load(os.path.join("assets", "ship_frame_1.png")).convert_alpha(), (100, 100))
-        ship_frame_2 = pygame.transform.scale(pygame.image.load(os.path.join("assets", "ship_frame_2.png")).convert_alpha(), (100, 100))
+        ship_frame_1 = pygame.transform.scale(pygame.image.load(os.path.join("assets", "graphics", "ship_frame_1.png")).convert_alpha(), (100, 100))
+        ship_frame_2 = pygame.transform.scale(pygame.image.load(os.path.join("assets", "graphics", "ship_frame_2.png")).convert_alpha(), (100, 100))
         self.ship_frames = [ship_frame_1, ship_frame_2]
         self.frame_index = 0
         self.image = self.ship_frames[self.frame_index]

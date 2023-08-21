@@ -23,7 +23,8 @@ LIGHT_BLUE = (0, 102, 204)
 OPS = {"+": lambda x, y: x+y,
        "-": lambda x, y: x-y,
        "*": lambda x, y: x*y,
-       "/": lambda x, y: x/y}
+       "/": lambda x, y: x/y
+       }
 
 # Pygame init
 pygame.init()
@@ -42,25 +43,34 @@ bullets = pygame.sprite.Group()
 asteroids = pygame.sprite.Group()
 
 # Surfaces
-bg = pygame.transform.scale(pygame.image.load(os.path.join("assets", "SpaceBackGround.jpg")), (800, 900))
+bg = pygame.transform.scale(pygame.image.load(os.path.join("assets", "graphics", "SpaceBackGround.jpg")), (800, 900))
 game_font = pygame.font.SysFont("arial", 24)
 problem_font = pygame.font.SysFont("arial", 36)
 answer_font = pygame.font.SysFont("arial", 16)
 highscore_font = pygame.font.SysFont("arial", 44)
-game_over_image = pygame.transform.scale(pygame.image.load(os.path.join("assets", "game_over.png")).convert_alpha(), (594, 78))
+game_over_image = pygame.transform.scale(pygame.image.load(os.path.join("assets", "graphics", "game_over.png")).convert_alpha(), (594, 78))
 start_message = game_font.render("PRESS SPACE TO START", False, WHITE)
 retry_message = game_font.render("PRESS SPACE TO RETRY", False, WHITE)
 new_highscore_message = highscore_font.render("NEW HIGH SCORE!", False, GREEN)
 health_bar = pygame.Rect((30, 30), (player.sprite.health, 30))
 health_frame = pygame.Rect((28, 28), (154, 34))
-heart = pygame.image.load(os.path.join("assets", "heart.png")).convert_alpha()
-bullet_image = pygame.image.load(os.path.join("assets", "bullet.png")).convert_alpha()
+heart = pygame.image.load(os.path.join("assets", "graphics", "heart.png")).convert_alpha()
+bullet_image = pygame.image.load(os.path.join("assets", "graphics", "bullet.png")).convert_alpha()
 math_window = pygame.Rect((0, 0), (400, 200))
 math_window.center = (WIDTH/2, HEIGHT/2)
 input_bar = pygame.Rect((0, 0), (100, 25))
 input_bar.center = (WIDTH/2, HEIGHT/2)
 input_border = pygame.Rect((0, 0), (102, 27))
 input_border.center = (WIDTH/2, HEIGHT/2)
+
+# Sounds
+bg_music = pygame.mixer.Sound(os.path.join("assets", "audio", "background_music.mp3"))
+bg_music.set_volume(0.25)
+bullet_sound = pygame.mixer.Sound(os.path.join("assets", "audio", "laser_shot.wav"))
+asteroid_hit_sound = pygame.mixer.Sound(os.path.join("assets", "audio", "asteroid_hit.wav"))
+ship_hit_sound = pygame.mixer.Sound(os.path.join("assets", "audio", "ship_hit.wav"))
+game_over_sound = pygame.mixer.Sound(os.path.join("assets", "audio", "game_over.mp3"))
+correct_sound = pygame.mixer.Sound(os.path.join("assets", "audio", "correct_answer.mp3"))
 
 
 def load_highscore():
@@ -189,6 +199,7 @@ def math_problem(difficulty_level):
         # once the user submits an answer, update the window and game variables accordingly and break the loop
         if answered:
             if int(user_answer) == problem[1]:
+                correct_sound.play()
                 player.sprite.bullets += 40
                 message = "Correct!"
                 color  = GREEN
@@ -216,6 +227,7 @@ def check_player_collision():
     # first check using rect collision detection to avoid constant mask detection and improve performance
     if pygame.sprite.spritecollide(player.sprite, asteroids, False):
         if pygame.sprite.spritecollide(player.sprite, asteroids, True, pygame.sprite.collide_mask):
+            ship_hit_sound.play()
             return True
     
     return False
@@ -228,6 +240,7 @@ def check_bullet_collision():
     # first check using rect collision detection to avoid constant mask detection and improve performance
     if pygame.sprite.groupcollide(bullets, asteroids, False, False):
         if pygame.sprite.groupcollide(bullets, asteroids, True, True, pygame.sprite.collide_mask):
+            asteroid_hit_sound.play()
             return True
         
     return False
@@ -245,6 +258,23 @@ def reset_game():
     asteroids.empty()
     bullets.empty()
     pygame.time.delay(300)
+
+
+def handle_game_over(game_active, game_over):
+    """ Handles the end of a game by stopping the background music and playing the game over music
+        drawing the final state of the game screen, handling the high score with handle_highscore()
+        and reset the game variables with reset_game()
+    """
+    bg_music.stop()
+    pygame.time.delay(100)
+    game_over_sound.play()
+    health_bar.width = player.sprite.health
+    draw_screen(game_active, game_over)
+    score, highscore, new_highscore = handle_highscore(player.sprite.score)
+    reset_game()
+    pygame.time.delay(1000)
+
+    return (score, highscore, new_highscore)
 
 
 def draw_screen(game_active, game_over, **kwargs):
@@ -298,8 +328,10 @@ def main():
     game_active = False
     game_over = False
     new_highscore = False
+    first_attempt = True
     score = 0
     highscore = 0
+    bg_music.play(loops=-1)
 
     while run:
         # Event loop
@@ -314,6 +346,7 @@ def main():
                     if event.key == pygame.K_SPACE and player.sprite.bullets > 0:
                         bullet = Bullet((player.sprite.rect.x + player.sprite.rect.width/2, player.sprite.rect.y + 5))
                         bullets.add(bullet)
+                        bullet_sound.play()
                         player.sprite.bullets -= 1
 
                 # check for asteroid spawn event; increase asteroid speed as score increases
@@ -328,7 +361,7 @@ def main():
                     if player.sprite.score < 0:
                         math_problem(1)
                     else:
-                        math_problem(min(1 + player.sprite.score // 500, 5))
+                        math_problem(min(1 + player.sprite.score // 750, 5))
                     pygame.time.set_timer(problem_timer, 45000)
 
             else:
@@ -336,6 +369,9 @@ def main():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
                         pygame.time.delay(300)
+                        if first_attempt == False:
+                            bg_music.play(loops=-1)
+                        first_attempt = False
                         game_active = True
                         game_over = False
                         pygame.time.set_timer(asteroid_timer, 1500)
@@ -349,13 +385,9 @@ def main():
                     player.sprite.lives -= 1
                     # reset game variables when out of lives, otherwise reset health for new life
                     if player.sprite.lives == 0:
-                        health_bar.width = player.sprite.health
-                        draw_screen(game_active, game_over)
-                        score, highscore, new_highscore = handle_highscore(player.sprite.score)
+                        score, highscore, new_highscore = handle_game_over(game_active, game_over)
                         game_active = False
                         game_over = True
-                        reset_game()
-                        pygame.time.delay(1000)
                     else:
                         player.sprite.health = 150
                 health_bar.width = player.sprite.health
@@ -370,12 +402,9 @@ def main():
 
             # reset game if no more ammo
             if player.sprite.bullets == 0 and not bullets:
-                draw_screen(game_active, game_over)
-                score, highscore, new_highscore = handle_highscore(player.sprite.score)
+                score, highscore, new_highscore = handle_game_over(game_active, game_over)
                 game_active = False
                 game_over = True
-                reset_game()
-                pygame.time.delay(1000)
 
         # if player lost, call draw_screen with scoring arguments
         if game_over:

@@ -11,7 +11,7 @@ class Title(pygame.sprite.Sprite):
             and screen_h (width and height of the screen) arguments, and an initial velocity
         """
         super().__init__()
-        self.image = pygame.transform.scale(pygame.image.load(os.path.join("assets", "title.png")).convert_alpha(), (730, 70))
+        self.image = pygame.transform.scale(pygame.image.load(os.path.join("assets", "graphics", "title.png")).convert_alpha(), (730, 70))
         self.rect = self.image.get_rect(center=(screen_w/2, screen_h/3))
         self.velocity = -1
 

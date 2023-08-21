@@ -12,7 +12,7 @@ class Bullet(pygame.sprite.Sprite):
             from the pos argument
         """
         super().__init__()
-        self.image = pygame.image.load(os.path.join("assets", "bullet.png")).convert_alpha()
+        self.image = pygame.image.load(os.path.join("assets", "graphics", "bullet.png")).convert_alpha()
         self.rect = self.image.get_rect(midbottom=pos)
         self.mask = pygame.mask.from_surface(self.image)
 
