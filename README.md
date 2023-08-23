@@ -1,4 +1,3 @@
-# <p align=center>AstroDestroyer</p>
 # <p align=center> ![Title](https://github.com/EMobilio/AstroDestroyer/assets/109104115/983060f9-c930-4f28-968c-8b4aa8354214) </p>
 
 
@@ -10,7 +9,7 @@ The original version was written in JavaScript and functioned fine, but due to m
 
 There are still some potential improvements to be made. In the future I may add a pause feature, menus to display or possibly change the controls and toggle sounds, and more complex animations for asteroid destruction and ship explosion. I also may add some in-game power-ups.
 
-![Gameplay](https://github.com/EMobilio/AstroDestroyer/assets/109104115/7c581b69-4f6b-4c76-8efb-8b31ee2a7218)
+<p align=center><img alt="Gameplay" src="https://github.com/EMobilio/AstroDestroyer/assets/109104115/7c581b69-4f6b-4c76-8efb-8b31ee2a7218"></p>
 
 ## How to Run
 Before running, make sure you have Python installed.
