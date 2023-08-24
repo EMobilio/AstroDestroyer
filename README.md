@@ -7,8 +7,6 @@ my freshman year of high school. The assignment was to create a game that includ
 
 The original version was written in JavaScript and functioned fine, but due to my lack of experience, the source code was extremely inefficient and required over 7,000 repetitive lines of code. I no longer have access to that original version, so I decided to re-create the game in Python using Pygame and generally enhance it using all the programming knowledge I have acquired since that first class. 7,000+ lines of code turned into a few hundred, and the final product is much smoother and more polished and even contains many extra features including sound effects, high score tracking, and specially designed graphics done by myself.
 
-There are still some potential improvements to be made. In the future I may add a pause feature, menus to display or possibly change the controls and toggle sounds, and more complex animations for asteroid destruction and ship explosion. I also may add some in-game power-ups.
-
 <p align=center><img alt="Gameplay" src="https://github.com/EMobilio/AstroDestroyer/assets/109104115/7c581b69-4f6b-4c76-8efb-8b31ee2a7218"></p>
 
 ## How to Run
@@ -33,3 +31,9 @@ Shoot the falling asteroids before they hit or pass your ship! Getting hit cause
 - '0'-'9' and '-' to type answers
 - 'return' to enter an answer
 
+## Future Scope
+Future improvements might include:
+- implementing a pause feature
+- implementing menus to display and possibly change controls and toggle sounds
+- adding more complex animations for asteroid destruction and ship explosion
+- adding in-game power-ups
